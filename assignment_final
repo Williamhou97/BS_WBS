@@ -1,0 +1,375 @@
+---
+title: "Business Statistics Assessment"
+author: "1952406"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_document:
+    toc: yes
+    toc_depth: 3
+---
+
+```{r setup}
+library(tidyverse)
+options(width=100)
+```
+
+---
+
+Rename this file and the folder it is in with your student number (e.g., "1912345.Rmd")
+
+Submit this file and the knitted html as a zip file (e.g., 1912345.zip) _by right clicking on the folder to zip it_. That is, the zip file 1912345.zip should contain the folder 1912345 with _only_ the files 1912345.Rmd and 1912345.html
+
+---
+
+# Question 1 Section 1
+
+![Figure 1](Figure1.jpg)
+
+As figure 1 shows, people's wellbeing level increases as their credit score increases, and those with payday loan tend to have higher wellbeing level. But this doesn't mean getting a payday loan will increase people's wellbeing. Linear regression is required to exam credit score and payday loan's effect on wellbeing level separately.
+
+Anova function is used to test whether including SES in the model is a good idea. As the result shows, adding SES to model significantly increases the fit of the model. F(1,4996) = 3272.5, p < 0.0001.
+
+Holding credit.score and SES,there is 0.13 reduction in wellbeing level if someone is given a payday loan compared with those who aren't. This decrease is significantly different from zero. t(4996) = -2.359, p = 0.0184.
+
+Holding credit.score and SES,someone's wellbeing level will reduce by 0.13 95% CI[0.02-0.24] if he/she was given a payday loan.
+
+
+
+---
+
+# Question 2 Section 1
+
+![Figure 2](Figure2.jpg)
+
+Figure 2 shows that high credit score reduces the possibility of having adverse credit events. And people with payday loan are less likely to get adverse credit event.
+
+Again anova function is called to check whether SES and payday loan have effect on the possibility of having adverse credit events. As the anova result shows, SES's effect on the adverse credit event is not significant, χ^2^(4997) = 6643.7, p = 0.3394.
+
+Besides, the effect of the intercept between SES and loan is insignificant as well, χ^2^(4996) = 6643.6, p = 0.7259, which means the effect of payday loan on adverse credit event doesn't differ as the SES changes.
+
+Then SES is excluded from the model and logistic regression is used to check the correlation between adverse.credit.event and loan.
+
+As the result shows, the odd of someone having a adverse credit event will change by e ^-0.93659^ (0.392) if he/she gets a payday loan, χ^2^(4998) = 6644.6 , p < 0.0001. In other words, someone is 60.8% less likely to have adverse credit event if he/she gets a payday loan. 
+
+Someone's odd of having adverse credit event will decrease if he/she gets a payday loan by 60.8% 95% CI[56.1% - 65.0%]
+
+---
+
+# Question 1 Section 2
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+library(ggpubr)
+
+```
+
+```{r}
+
+payday <- read.csv("payday.csv")
+
+```
+
+```{r}
+
+payday$id <- as.character(payday$id)
+payday$loan <- factor(payday$loan)
+str(payday)
+summary(payday)
+
+```
+
+
+```{r}
+
+ggplot(data = payday,aes(x = well.being,fill=loan)) + 
+  geom_histogram(binwidth = 0.5) + 
+  facet_grid( ~ loan ) +
+  labs(x="Wellbeing Level", y="Number of People",subtitle = "Wellbeing Level Allocation")
+
+```
+
+```{r}
+
+wl_cr <- ggplot(data = payday,aes(x = credit.score, y = well.being)) + 
+  geom_jitter(aes(color = loan)) + 
+  geom_smooth(method = "lm",size = 1,color = "blue") +
+  labs(x="Credit Score", y="Wellbeing level",subtitle = "Correlation between Wellbeing Level and Credit Score")
+
+wl_cr
+
+```
+
+
+```{r}
+
+payday_avg <- payday %>%
+  group_by(credit.score,loan) %>%
+  mutate(avg = mean(well.being))
+```
+
+
+```{r}
+
+avgwl_cr<- ggplot(data = payday_avg,aes(x = credit.score, y = avg)) + 
+  geom_point(aes(color = loan)) + 
+  geom_smooth(aes(color = loan),method = "lm") +
+  labs(x="Credit Score", y="Average Wellbeing level",subtitle = "Correlation between Average Wellbeing Level and Credit Score")
+
+avgwl_cr
+```
+
+```{r}
+
+figure1 <- ggarrange(wl_cr, avgwl_cr,nrow = 2)
+
+figure1
+
+```
+
+```{r}
+
+wl_SES <- ggplot(data = payday,aes(x = SES, y = well.being)) + 
+  geom_jitter(aes(color = loan)) + 
+  geom_smooth(method = "glm",aes(color = loan)) +
+  labs(x="SES", y="Average Wellbeing level",subtitle = "Correlation between Average Wellbeing Level and SES")
+
+
+wl_SES
+```
+
+
+```{r}
+
+payday_avg_SES <- payday %>%
+  group_by(SES,loan) %>%
+  mutate(avg = mean(well.being))
+```
+
+
+```{r}
+
+wl_angses <- ggplot(data = payday_avg_SES,aes(x = SES, y = avg)) + 
+  geom_point(aes(color = loan)) + 
+  geom_smooth(method = "glm",aes(color = loan)) +
+  labs(x="SES", y="Average Wellbeing level",subtitle = "Correlation between Average Wellbeing Level and SES")
+
+wl_angses
+```
+
+```{r}
+
+figure2 <- ggarrange(wl_SES, wl_angses,nrow = 2)
+
+figure2
+
+```
+
+```{r}
+
+ggplot(payday,aes(x = credit.score)) +
+  geom_histogram(bins = 50,aes(fill = loan)) +
+  facet_wrap(~ well.being,nrow = 7) +
+  labs(x="Credit Score", y="Number of people",subtitle = "Allocation of Credit Score in different wellbeing groups")
+
+```
+
+
+
+Firstly, linear regression is used to test the correlation between wellbeing level and loan + credit score.
+```{r}
+
+wellbeing.by.loan.creditscore <- lm(well.being~loan+credit.score, data=payday)
+summary(wellbeing.by.loan.creditscore)
+
+```
+
+Holding credit.score,there is 0.15 reduction in wellbeing level if someone was given a payday loan compared with those who weren't. This decrease is significantly different from zero. t(4997) = -2.123, p = 0.0338.
+
+```{r}
+
+cbind(coefficient=coef(wellbeing.by.loan.creditscore), confint(wellbeing.by.loan.creditscore))
+
+```
+
+Holding credit.score,someone's wellbeing level will reduce by 0.15 95% CI[0.01-0.29] if he/she is given a payday loan.
+
+```{r}
+
+wellbeing.by.loan.creditscore.emmeans <- emmeans(wellbeing.by.loan.creditscore, ~loan + credit.score,at=list(credit.score=500))
+print(wellbeing.by.loan.creditscore.emmeans)
+
+```
+
+Then, linear regression is used to test the correlation between wellbeing level and loan + credit score + SES.
+```{r}
+
+wellbeing.by.loan.creditscore.SES <- lm(well.being ~ loan + credit.score + SES, data=payday)
+summary(wellbeing.by.loan.creditscore.SES)
+```
+
+Holding credit.score and SES,there is 0.13 reduction in wellbeing level if someone was given a payday loan compared with those who weren't. This decrease is significantly different from zero. t(4996) = -2.359, p = 0.0184.
+
+
+Anova function is used to check whether including SES will increase the fit of the model.
+```{r}
+
+anova(wellbeing.by.loan.creditscore,wellbeing.by.loan.creditscore.SES)
+
+```
+
+Adding SES to model significantly increases the ift of the model. F(1,4996) = 3272.5, p < 0.0001.
+
+```{r}
+
+cbind(coefficient=coef(wellbeing.by.loan.creditscore.SES), confint(wellbeing.by.loan.creditscore.SES))
+
+```
+
+Holding credit.score and SES,someone's wellbeing level will reduce by 0.13 95% CI[0.02-0.24] if he/she was given a payday loan.
+
+
+```{r}
+
+wellbeing.by.loan.creditscore.SES.emmeans <- emmeans(wellbeing.by.loan.creditscore.SES, ~loan + credit.score + SES,at=list(credit.score=500))
+print(wellbeing.by.loan.creditscore.SES.emmeans)
+
+```
+
+```{r}
+
+confint(contrast(wellbeing.by.loan.creditscore.SES.emmeans, list(loan=c(1,-1))))
+
+```
+
+---
+
+# Question 2 Section 2
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+library(emmeans)
+
+```
+
+```{r}
+
+payday <- read.csv("payday.csv")
+
+```
+
+```{r}
+
+payday$id <- as.character(payday$id)
+payday$loan <- factor(payday$loan)
+payday$adverse.credit.event <- factor(payday$adverse.credit.event)
+str(payday)
+summary(payday)
+
+```
+
+```{r}
+
+ggplot(data = payday,aes(x = credit.score,fill = adverse.credit.event)) + geom_histogram(bins = 21) +          
+  geom_vline(xintercept=500,linetype='dashed') +
+  labs(x="Credit Score", y="Number of people",subtitle = "Allocation of Adverse Credit Event")
+
+
+```
+
+
+```{r}
+
+ggplot(data = payday,aes(x = SES,fill = adverse.credit.event)) + geom_histogram(bins = 23) +
+  labs(x="SES", y="Number of people",subtitle = "Allocation of Adverse Credit Event")
+
+
+```
+
+Run logistic regression to check the correlation between adverse.credit.event and SES * loan
+```{r}
+
+adverse.by.loan.SES <- glm(adverse.credit.event ~ loan * SES, family = binomial, data = payday)
+summary(adverse.by.loan.SES)
+
+```
+
+```{r}
+
+anova(adverse.by.loan.SES, test="Chisq")
+
+```
+
+As the anova result shows, SES's effect on the adverse credit event is not significant, χ^2^(4997) = 6643.7, p = 0.3394. 
+
+Besides, the effect of the intercept between SES and loan is insignificant as well, χ^2^(4996) = 6643.6, p = 0.7259, which means the effect of payday loan on adverse credit event doesn't differ as the SES changes.
+
+Then SES is excluded from the model and logistic regression is used to check the correlation between adverse.credit.event and loan.
+
+```{r}
+
+adverse.by.loan <- glm(adverse.credit.event ~ loan, family = binomial, data = payday)
+summary(adverse.by.loan)
+
+```
+
+```{r}
+
+anova(adverse.by.loan, test="Chisq")
+
+```
+
+As the result shows, the odd of someone having a adverse credit event will change by e ^-0.93659^ (0.392) if he/she gets a payday loan, χ^2^(4998) = 6644.6 , p < 0.0001. In other words, someone is 60.8% less likely to have adverse credit event if he/she gets a payday loan. 
+
+
+```{r}
+
+cbind(coef(adverse.by.loan),confint(adverse.by.loan))
+
+```
+
+```{r}
+
+1 - exp(cbind(coef(adverse.by.loan),confint(adverse.by.loan))[2,])
+
+```
+
+Someone's odd of having adverse credit event will decrease if he/she gets a payday loan by 60.8% 95% CI[56.1% - 65.0%]
+
+```{r}
+
+adverse.by.loan.creditscore <- glm(adverse.credit.event ~ loan * credit.score, family = binomial, data = payday)
+summary(adverse.by.loan.creditscore)
+
+```
+
+```{r}
+
+anova(adverse.by.loan.creditscore, test="Chisq")
+
+```
+
+It seems if credit score is included in the model then the effect of payday loan turns to be insignificant.
+
+```{r}
+
+cbind(coef(adverse.by.loan.creditscore),confint(adverse.by.loan.creditscore))
+
+```
+
+```{r}
+
+exp(cbind(coef(adverse.by.loan.creditscore),confint(adverse.by.loan.creditscore))) - 1
+
+```
+
+Holding the credit score, someone's odd of having adverse credit event will increase by 123% 95% CI[-70% - 1559%], which is not making any sense.
+
+
+
